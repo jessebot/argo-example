@@ -231,3 +231,6 @@ If you don't have the argoCD server address already specified you'll get this:
 ```bash
 FATA[0000] Argo CD server address unspecified
 ```
+
+# Success!
+You can check out another tutorial for kafka on k8s [here](https://github.com/jessebot/argo-kafka-example)
