@@ -19,6 +19,7 @@ Just a quick example of how to set up a test Kuberentes (k8s) environment with K
 [ArgoCD](https://argo-cd.readthedocs.io/en/stable/) - Continuous Delivery for k8s, from within k8s
 - [Argo CLI tool](https://argo-cd.readthedocs.io/en/stable/cli_installation/) - this will let you use ArgoCD without the web interface
 - [ArgoCD Vault Plugin](https://argocd-vault-plugin.readthedocs.io/en/stable/installation/) - ArgoCD with Vault
+- [ArgoCD Vault Replacer](https://github.com/crumbhole/argocd-vault-replacer)
 ### Config Management (K8s)
 [Kustomize](https://kustomize.io/) - kubernetes native config managment to install argo with vault
 
