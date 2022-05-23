@@ -75,10 +75,16 @@ kube-system          Active   27m
 local-path-storage   Active   27m
 ```
 
-Now that we've verified we have a local k8s cluster, let's get Argo up and running!
+Now that we've verified we have a local k8s cluster, let's get Argo and Vault up and running!
 
-# Installing ArgoCD with Vault
-## Kustomize Installation
+# ArgoCD
+Before doing anything, you'll need some namespaces:
+```
+kubectl create namespace argocd
+kubectl create namespace vault
+```
+
+## Argo CD with Vault (Kustomize Install)
 ```bash
 # Create a Directory to Store the yamls
 mkdir kustomize && cd kustomize
@@ -231,6 +237,14 @@ $ argocd login localhost:8080 --username admin --password $yourpassword
 If you don't have the argoCD server address already specified you'll get this:
 ```bash
 FATA[0000] Argo CD server address unspecified
+```
+
+# Vault
+Follow along [here](https://learn.hashicorp.com/tutorials/vault/kubernetes-raft-deployment-guide?in=vault/kubernetes).
+
+```bash
+## add the helm repo
+helm repo add hashicorp https://helm.releases.hashicorp.com
 ```
 
 # Success!
