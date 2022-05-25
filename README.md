@@ -243,8 +243,14 @@ FATA[0000] Argo CD server address unspecified
 Follow along [here](https://learn.hashicorp.com/tutorials/vault/kubernetes-raft-deployment-guide?in=vault/kubernetes).
 
 ```bash
-## add the helm repo
+# add the helm repo
 helm repo add hashicorp https://helm.releases.hashicorp.com
+
+# create a spot for the chart
+mkdir charts/vault && cd charts/vault/
+
+# can also curl chart here
+wget https://raw.githubusercontent.com/hashicorp/vault-helm/main/Chart.yaml
 ```
 
 # Success!
