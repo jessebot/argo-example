@@ -5,7 +5,7 @@ Just a quick example of how to set up a test Kuberentes (k8s) environment with K
 ## Package Managers
 - [brew](https://brew.sh/) - Missing package manager for Mac (also supports Linux)
   - Also got some scripts for Debian distros
-- [helm2](https://helm.sh/docs/intro/quickstart/) installs k8s apps (mostly a bunch of k8s yamls)
+- [helm2](https://helm.sh/docs/intro/quickstart/) installs k8s apps (mostly a bunch of k8s yamls) - can also be helm3, just not helm1
 
 ## Container Orchestration
 - [Docker](https://www.docker.com/get-started/) - for the containers
