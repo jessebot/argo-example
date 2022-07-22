@@ -256,7 +256,7 @@ wget https://raw.githubusercontent.com/hashicorp/vault-helm/main/Chart.yaml
 Then you'll want to review the current [values.yaml](https://github.com/hashicorp/vault-helm/blob/main/values.yaml) for vault at the source. After that, or even before, you can pull the whole file and only use what you need:
 
 ```bash
-wget https://raw.githubusercontent.com/hashicorp/vault-helm/blob/main/values.yaml
+wget https://raw.githubusercontent.com/hashicorp/vault-helm/main/values.yaml
 ```
 
 # Success!
