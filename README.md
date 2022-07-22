@@ -1,5 +1,5 @@
-# Kubernetes, ArgoCD, and Vault
-Just a quick example of how to set up a test Kuberentes (k8s) environment with KIND, and then using ArgoCD. Uses Hashicorp's Vault for secret storage :)
+# ArgoCD and Vault on K8s
+Just a quick example of how to set up a test Kuberentes (k8s) environment with KIND, and then use ArgoCD for k8s config management and Hashicorp's Vault for secret storage :)
 
 # Tech stack and Dependencies
 ## Package Managers
