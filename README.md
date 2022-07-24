@@ -55,7 +55,7 @@ kubectl cluster-info --context kind-kind
 Not sure what to do next? 😅  Check out https://kind.sigs.k8s.io/docs/user/quick-start/
 ```
 
-*Note: make sure you have kubectl installed, and you can install that with brew as well*
+*Note: make sure you have `kubectl` installed, and you can install that with `brew install kubectl` as well*
 
 You'll want to follow kind advice and get some important info with, as well as verify the cluster is good to go:
 ``` bash
@@ -98,13 +98,13 @@ wget https://raw.githubusercontent.com/argoproj-labs/argocd-vault-plugin/main/ma
 cd ..
 
 # apply the kustomize files
-k apply -k kustomize
+kubectl apply -k kustomize
 ```
 
 ## Helm Installation without Vault
 First we'll need helm (`brew install helm`, if you haven't already). Then, if you want this to be repeatable, you can clone this repo because you'll need to create the `Chart.yaml` and `values.yaml` in `charts/argo`. You can update your `version` parameter in `charts/argo/Chart.yaml` to the `version` param you see in [this repo](https://github.com/argoproj/argo-helm/blob/master/charts/argo-cd/Chart.yaml), at whatever time in the future that you're working on this. If you don't verify that version you will end up like me, half way down this article... :facepalm:
 
-Then you can run the following helm commands:
+Then you can run the following `helm` commands:
 
 ```bash
 $ helm repo add argo https://argoproj.github.io/argo-helm
@@ -125,54 +125,6 @@ The next thing you need to do do is install the chart with:
 $ helm install argo-cd charts/argo/
 ```
 
-### How to fix crd-install issue (Skip if no issue on `helm install`)
-*Why and How*
-You would see this:
-```bash
-$ helm install argo-cd charts/argo/
-manifest_sorter.go:192: info: skipping unknown hook: "crd-install"
-manifest_sorter.go:192: info: skipping unknown hook: "crd-install"
-NAME: argo-cd
-LAST DEPLOYED: Wed May 11 10:53:55 2022
-NAMESPACE: default
-STATUS: deployed
-REVISION: 1
-TEST SUITE: None
-```
-
-You need those CRDs, or the pod will just crash loop, and then when you try to follow the next logical step of port-forwarding to test the frontend, you'll get something like this, when you actually test it:
-```bash
-$ kubectl port-forward svc/argo-cd-argocd-server 8080:443
-Forwarding from 127.0.0.1:8080 -> 8080
-Forwarding from [::1]:8080 -> 8080
-Handling connection for 8080
-```
-
-Which seems fine, but when you go to http://localhost:8080 in your browser you'll see this in stdout in your terminal:
-```
-E0511 11:07:43.094956   46063 portforward.go:406] an error occurred forwarding 8080 -> 8080: error forwarding port 8080 to pod 53c2b12a3c748bb2c9acd763ed898c5261227ca4b359c047ec264608cbc67058, uid : failed to execute portforward in network namespace "/var/run/netns/cni-84865981-c6a2-6e6d-1ce1-336602591e41": failed to connect to localhost:8080 inside namespace "53c2b12a3c748bb2c9acd763ed898c5261227ca4b359c047ec264608cbc67058", IPv4: dial tcp4 127.0.0.1:8080: connect: connection refused IPv6 dial tcp6 [::1]:8080: connect: connection refused
-E0511 11:07:43.095553   46063 portforward.go:234] lost connection to pod
-Handling connection for 8080
-E0511 11:07:43.096354   46063 portforward.go:346] error creating error stream for port 8080 -> 8080: EOF
-```
-
-This happens because you're using an older version of argoCD, and is apparently because of [this issue](https://github.com/bitnami/charts/issues/7972) and is fixed by [this](https://github.com/helm/helm/issues/6930), so you can just update your version.
-
-*Fix*
-Update `version` of your `charts/argo/Chart.yaml` to at least 4.6.0 (cause that's what worked for me :D)
-
-Then you'll need to rerun the dep update:
-```bash
-helm dep update charts/argo/
-```
-
-Followed by uninstalling, and then reinstalling:
-```bash
-$ helm uninstall argo-cd
-release "argo-cd" uninstalled
-```
-
-### Resume here after CRD issue detour
 Now, for the perfect installation of our dreams:
 ```bash
 $ helm install argo-cd charts/argo/
@@ -186,18 +138,19 @@ TEST SUITE: None
 :chef-kiss:
 
 ## Argo via the GUI
-You'll need to test out the front end, but before you can do that, you need to do some port forwarding:
+You'll need to test out the front end, but before you can do that, you need to do some port forwarding so you can access it on localhost.
+*If you installed ArgoCD **WITHOUT** Vault, use this command*:
 ```bash
-# Do this one if you didn't install ArgoCD with Vault
-$ kubectl port-forward svc/argo-cd-argocd-server 8080:443
-Forwarding from 127.0.0.1:8080 -> 8080
-Forwarding from [::1]:8080 -> 8080
-Handling connection for 8080
+kubectl port-forward svc/argo-cd-argocd-server 8080:443
 ```
-or
+
+*If you installed ArgoCD **WITH** Vault, use this command*:
 ```bash
-# Do this if you installed ArgoCD WITH Vault
-$ kubectl port-forward svc/argocd-server 8080:443
+kubectl port-forward svc/argocd-server 8080:443
+```
+
+Which should both give you this output:
+```
 Forwarding from 127.0.0.1:8080 -> 8080
 Forwarding from [::1]:8080 -> 8080
 Handling connection for 8080
@@ -211,6 +164,8 @@ You can now login with the default username, `admin`, and auto-generated passwor
 ```bash
 kubectl get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d
 ```
+
+In case of failure, check out the [Possible Errors](#Possible Errors) section for current known fixes.
 
 ### CLI
 First you should generate cli completion for your shell of choice. In my case, it was BASH:
@@ -259,5 +214,55 @@ Then you'll want to review the current [values.yaml](https://github.com/hashicor
 wget https://raw.githubusercontent.com/hashicorp/vault-helm/main/values.yaml
 ```
 
-# Success!
+## Success!
 You can check out another tutorial for kafka on k8s [here](https://github.com/jessebot/argo-kafka-example)
+
+
+# Possible Errors
+
+### How to fix crd-install issue
+*Why and How*
+You would see this:
+```bash
+$ helm install argo-cd charts/argo/
+manifest_sorter.go:192: info: skipping unknown hook: "crd-install"
+manifest_sorter.go:192: info: skipping unknown hook: "crd-install"
+NAME: argo-cd
+LAST DEPLOYED: Wed May 11 10:53:55 2022
+NAMESPACE: default
+STATUS: deployed
+REVISION: 1
+TEST SUITE: None
+```
+
+You need those CRDs, or the pod will just crash loop, and then when you try to follow the next logical step of port-forwarding to test the frontend, you'll get something like this, when you actually test it:
+```bash
+$ kubectl port-forward svc/argo-cd-argocd-server 8080:443
+Forwarding from 127.0.0.1:8080 -> 8080
+Forwarding from [::1]:8080 -> 8080
+Handling connection for 8080
+```
+
+Which seems fine, but when you go to http://localhost:8080 in your browser you'll see this in stdout in your terminal:
+```
+E0511 11:07:43.094956   46063 portforward.go:406] an error occurred forwarding 8080 -> 8080: error forwarding port 8080 to pod 53c2b12a3c748bb2c9acd763ed898c5261227ca4b359c047ec264608cbc67058, uid : failed to execute portforward in network namespace "/var/run/netns/cni-84865981-c6a2-6e6d-1ce1-336602591e41": failed to connect to localhost:8080 inside namespace "53c2b12a3c748bb2c9acd763ed898c5261227ca4b359c047ec264608cbc67058", IPv4: dial tcp4 127.0.0.1:8080: connect: connection refused IPv6 dial tcp6 [::1]:8080: connect: connection refused
+E0511 11:07:43.095553   46063 portforward.go:234] lost connection to pod
+Handling connection for 8080
+E0511 11:07:43.096354   46063 portforward.go:346] error creating error stream for port 8080 -> 8080: EOF
+```
+
+This happens because you're using an older version of argoCD, and is apparently because of [this issue](https://github.com/bitnami/charts/issues/7972) and is fixed by [this](https://github.com/helm/helm/issues/6930), so you can just update your version.
+
+*Fix*
+Update `version` of your `charts/argo/Chart.yaml` to at least 4.6.0 (cause that's what worked for me :D)
+
+Then you'll need to rerun the dep update:
+```bash
+helm dep update charts/argo/
+```
+
+Followed by uninstalling, and then reinstalling:
+```bash
+$ helm uninstall argo-cd
+release "argo-cd" uninstalled
+```
