@@ -119,15 +119,13 @@ Downloading argo-cd from repo https://argoproj.github.io/argo-helm
 Deleting outdated charts
 ```
 
-The next thing you need to do do is install the chart with:
-
-```bash
-$ helm install argo-cd charts/argo/
-```
 
 Now, for the perfect installation of our dreams:
 ```bash
-$ helm install argo-cd charts/argo/
+helm install argo-cd charts/argo/
+```
+
+Which should yeld:
 NAME: argo-cd
 LAST DEPLOYED: Wed May 11 14:52:59 2022
 NAMESPACE: default
@@ -135,7 +133,11 @@ STATUS: deployed
 REVISION: 1
 TEST SUITE: None
 ```
-:chef-kiss:
+
+You can check to make sure everything is running well via `kubectl`:
+```bash
+kubectl get pods --namespace argocd
+```
 
 ## Argo via the GUI
 You'll need to test out the front end, but before you can do that, you need to do some port forwarding so you can access it on localhost.
