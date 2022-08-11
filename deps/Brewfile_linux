@@ -1,5 +1,4 @@
 brew "sl"
-brew "docker"
 brew "kubectl"
 brew "kind"
 brew "helm"
