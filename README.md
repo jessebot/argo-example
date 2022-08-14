@@ -115,7 +115,7 @@ You can now login with the default username, `admin`, and auto-generated passwor
 kubectl get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" -n argo-cd | base64 -d
 ```
 
-### CLI
+## Argo via the CLI
 First you should generate cli completion for your shell of choice. In my case, it was BASH:
 ```bash
 argocd completion bash > ~/.bashrc_argocd
@@ -150,7 +150,7 @@ Now you can do things like this, checking your active argocd repos:
 argocd repo list --grpc-web
 ```
 
-#### Adding an Application example
+### Adding an Application example
 Let's try an easy one first :) We'll use my [example prometheus repo](https://github.com/jessebot/prometheus_example) get your monitoring working in this cluster:
 
 ```bash
@@ -161,7 +161,7 @@ argocd repo add https://github.com/jessebot/prometheus_example
 argocd app create prometheus --repo https://github.com/jessebot/prometheus_example.git --dest-namespace monitoring --dest-server https://kubernetes.default.svc --path . --sync-policy auto --sync-option CreateNamespace=true
 ```
 
-#### Now for an example with a sealed secret
+### Now for an example with a sealed secret
 Coming soon. Working on a fancy repo to demo this with nextcloud :D
 
 # Cleanup
