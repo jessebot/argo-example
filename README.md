@@ -150,6 +150,20 @@ Now you can do things like this, checking your active argocd repos:
 argocd repo list --grpc-web
 ```
 
+#### Adding an Application example
+Let's try an easy one first :) We'll use my [example prometheus repo](https://github.com/jessebot/prometheus_example) get your monitoring working in this cluster:
+
+```bash
+# this adds the repo as something argo CD has access to
+argocd repo add https://github.com/jessebot/prometheus_example
+
+# This creates the app, and the namespace it will live in
+argocd app create prometheus --repo https://github.com/jessebot/prometheus_example.git --dest-namespace monitoring --dest-server https://kubernetes.default.svc --path . --sync-policy auto --sync-option CreateNamespace=true
+```
+
+#### Now for an example with a sealed secret
+Coming soon. Working on a fancy repo to demo this with nextcloud :D
+
 # Cleanup
 To delete the kind cluster:
 ```bash
