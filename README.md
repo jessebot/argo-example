@@ -213,6 +213,9 @@ release "argo-cd" uninstalled
 ```
 
 ## Other Tips
+
+Wanna have argo manage itself? Check out [Arthur's guide](https://www.arthurkoziel.com/setting-up-argocd-with-helm/), which I found really helpful.
+
 Still interested in Vault with ArgoCD? Check out the following:
 - [ArgoCD Vault Plugin](https://argocd-vault-plugin.readthedocs.io/en/stable/installation/) - ArgoCD with Vault
 - [ArgoCD Vault Replacer](https://github.com/crumbhole/argocd-vault-replacer) - for replacing secrets with vault values
