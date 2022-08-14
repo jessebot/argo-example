@@ -2,12 +2,12 @@
 dex:
   enabled: false
 
-ingress:
-  enabled: true
-  ingressClassName: nginx
-  hosts:
-    - "argocd.selfhosting4dogs.com"
-
 server:
+  ingress:
+    enabled: true
+    ingressClassName: nginx
+    hosts:
+      - "argocd.selfhosting4dogs.com"
+
   extraArgs:
     - "--insecure"

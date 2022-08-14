@@ -182,7 +182,7 @@ helm repo add argo-cd https://argoproj.github.io/argo-helm
 helm repo update
 ```
 
-Next, go into `values.yml` in this repo and change line 9 from `selfhosting4dogs.com` to a domain of your choosing :)
+Next, go into `values.yml` in this repo and change line 10 from `selfhosting4dogs.com` to a domain of your choosing :)
 ```yaml
    hosts:
      - "argocd.selfhosting4dogs.com"
