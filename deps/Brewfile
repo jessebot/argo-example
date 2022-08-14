@@ -1,6 +1,17 @@
-brew "sl"
-brew "docker"
+# if this doesn't work, then you can grab it here: https://www.docker.com/products/docker-desktop/
+cask "docker"
+
+# needed for cli interactions with k8s
 brew "kubectl"
+
+# mini k8s cluster
 brew "kind"
+
+# package manager for k8s
 brew "helm"
+
+# continuous delivery for k8s stuff
 brew "argocd"
+
+# uncomment this for a little train that will go across your screen when you type sl
+# brew "sl"

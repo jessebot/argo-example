@@ -1,90 +1,193 @@
 # ArgoCD and Vault on K8s
-Just a quick example of how to set up a test Kuberentes (k8s) environment with KIND, and then use ArgoCD for k8s config management and Hashicorp's Vault for secret storage :)
+Just a quick example of how to set up a test Kuberentes (k8s) environment with KIND, and then use ArgoCD for k8s config management and then we'll also setup bitnami's sealed secret for you (This will allow you to encrypt secrets so they are safe for git checkin) :) In the future, we'll support other secret solutions, but as this is geared towards a homelab, at this time, we won't be supporting Vault, as to be secure, and match production, we'd need a multinode cluster, which is not always feasible for smaller labs. 
 
-# Tech stack and Dependencies
-## Package Managers
+## Tech stack
+| App/Tool | Reason |
+|:--------:|:-------|
+| [Docker](https://www.docker.com/get-started/)         | for the containers |
+| [KIND](https://kind.sigs.k8s.io/)                     |  Tool to spin up a [Kubernetes](https://kubernetes.io/docs/concepts/overview/what-is-kubernetes/) [CLUSTER](media/peridot.png) in Docker, which we use to scale containers :3 |
+| [helm2/helm3](https://helm.sh/docs/intro/quickstart/) | installs k8s apps (mostly a bunch of k8s yamls) |
+| [ArgoCD](https://argo-cd.readthedocs.io/en/stable/)   | Continuous Delivery for k8s, from within k8s |
+| [sealed-secrets](https://github.com/bitnami-labs/sealed-secrets) | generation of secrets as encrypted blobs so you can check secrets into git |
+
+
+## Pre-Requisites
 - [brew](https://brew.sh/) - Missing package manager for Mac (also supports Linux)
-  - Also got some scripts for Debian distros
-- [helm2](https://helm.sh/docs/intro/quickstart/) - installs k8s apps (mostly a bunch of k8s yamls) [can also be helm3, just *not* helm1]
 
-## Container Orchestration
-- [Docker](https://www.docker.com/get-started/) - for the containers
-- [Kubernetes](https://kubernetes.io/docs/concepts/overview/what-is-kubernetes/) - [THE CLUSTER](media/peridot.png) we use to scale containers :3
-  - [KIND](https://kind.sigs.k8s.io/) - Tool to spin up mini k8s cluster locally
+<details>
+  <summary>macOS</summary>
 
-## Secrets Management
-[Vault](https://github.com/hashicorp/vault) - Open source secret management from Hashicorp
+  Make sure you have the [`Brewfile`](./deps/Brewfile) from this repo and then run:
 
-## Continuous Delivery
-[ArgoCD](https://argo-cd.readthedocs.io/en/stable/) - Continuous Delivery for k8s, from within k8s
-- [Argo CLI tool](https://argo-cd.readthedocs.io/en/stable/cli_installation/) - this will let you use ArgoCD without the web interface
-- [ArgoCD Vault Plugin](https://argocd-vault-plugin.readthedocs.io/en/stable/installation/) - ArgoCD with Vault
-- [ArgoCD Vault Replacer](https://github.com/crumbhole/argocd-vault-replacer)
-### Config Management (K8s)
-[Kustomize](https://kustomize.io/) - kubernetes native config managment to install argo with vault
+  ```bash
+    # MacOS only
+    brew bundle install deps/Brewfile
+  ```
 
-# Installation of quick k8s cluster (KIND)
-## brew (On MacOS/Linux)
-Make sure you have the `Brewfile` from this repo and then run: 
-```bash
-brew bundle install deps/Brewfile
-```
+</details>
 
-## apt (On Debian distros)
-This goes through the whole process with apt
-```bash
-.deps/apt_dep_installation.sh
-```
+<details>
+  <summary>Linux</summary>
 
-Then you can create a quick small cluster with the below command. It will create a cluster called kind, and it will have one node, but it will be fast, like no more than a few minutes. 
+  ### LinuxBrew
 
-```bash
-$ kind create cluster
-Creating cluster "kind" ...
- ✓ Ensuring node image (kindest/node:v1.21.1) 🖼
- ✓ Preparing nodes 📦
- ✓ Writing configuration 📜
- ✓ Starting control-plane 🕹️
- ✓ Installing CNI 🔌
- ✓ Installing StorageClass 💾
-Set kubectl context to "kind-kind"
-You can now use your cluster with:
+  ```bash
+  # Linux only
+  brew bundle install deps/Brewfile_linux
+  ```
+  
+  ### apt (On Debian distros)
 
-kubectl cluster-info --context kind-kind
+  ```bash
+  # Debian based distros only
+  .deps/apt_dep_installation.sh
+  ```
 
-Not sure what to do next? 😅  Check out https://kind.sigs.k8s.io/docs/user/quick-start/
-```
+</details>
 
-*Note: make sure you have kubectl installed, and you can install that with brew as well*
+# Installation
+Create a kubernetes cluster. If you don't have one, expand and follow the "Create a KIND Cluster" section.
+<details>
+  <summary>Create a KIND Cluster</summary>
 
-You'll want to follow kind advice and get some important info with, as well as verify the cluster is good to go:
-``` bash
-$ kubectl cluster-info --context kind-kind
-Kubernetes control plane is running at https://127.0.0.1:64067
-CoreDNS is running at https://127.0.0.1:64067/api/v1/namespaces/kube-system/services/kube-dns:dns/proxy
+  This is from the README.md for KIND in my other repo:
+  [https://github.com/jessebot/smol_k8s_homelab/main/kind/](https://www.pfsense.org/products/#requirements)
+  
+  Create a quick small "ingress ready" KIND cluster with the below commands. 
+  It will create a cluster called kind, and it will have one node, but it will
+  be fast, like no more than a few minutes.
+  
+  ```bash
+    cat <<EOF | kind create cluster --config=-
+    kind: Cluster
+    apiVersion: kind.x-k8s.io/v1alpha4
+    nodes:
+    - role: control-plane
+      kubeadmConfigPatches:
+      - |
+        kind: InitConfiguration
+        nodeRegistration:
+          kubeletExtraArgs:
+            node-labels: "ingress-ready=true"
+      extraPortMappings:
+      - containerPort: 80
+        hostPort: 80
+        protocol: TCP
+      - containerPort: 443
+        hostPort: 443
+        protocol: TCP
+    EOF
+  ```
+  
+  Then install the nginx-ingress controller so you can access webpages from outside the cluster:
+  ```bash
+    kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/kind/deploy.yaml
+  ```
+  
+  You'll want to follow kind's advice and get some important info with, as well as verify the cluster is good to go:
+  ``` bash
+    kubectl cluster-info --context kind-kind
+    kind get clusters
+  ```
+  Those commands should output this:
+  ```bash
+    Kubernetes control plane is running at https://127.0.0.1:64067
+    CoreDNS is running at https://127.0.0.1:64067/api/v1/namespaces/kube-system/services/kube-dns:dns/proxy
+  
+    kind
+  ```
 
-$ kind get clusters
-kind
+</details>
 
-$ kg namespaces
-NAME                 STATUS   AGE
-default              Active   27m
-kube-node-lease      Active   27m
-kube-public          Active   27m
-kube-system          Active   27m
-local-path-storage   Active   27m
-```
+<details>
+  <summary>*Optional*: Install cert-manager</summary>
+
+  ```bash
+    helm repo add jetstack https://charts.jetstack.io
+    helm repo update
+    helm install cert-manager jetstack/cert-manager \
+        --namespace kube-system \
+        --version v1.9.1 \
+        --set installCRDs=true 
+  ```
+  
+  Wait on cert-manager to deploy:
+
+  ```bash
+    kubectl rollout status -n kube-system deployment/cert-manager
+    
+    kubectl rollout status -n kube-system deployment/cert-manager-webhook
+    
+    kubectl wait --namespace kube-system \
+      --for=condition=ready pod \
+      --selector=app.kubernetes.io/name=cert-manager \
+      --timeout=90s
+    
+    kubectl wait --namespace kube-system \
+      --for=condition=ready pod \
+      --selector=app.kubernetes.io/component=webhook \
+      --timeout=90s
+  ```
+
+  After you've confirmed via `k9s` or `kubectl get pods -A` that all the
+  cert-manager pods are completely ready, you can Deploy the lets-encrypt
+  staging cluster issuer:
+
+  ```bash
+    cat <<EOF | kubectl apply -f -
+    apiVersion: cert-manager.io/v1
+    kind: ClusterIssuer
+    metadata:
+      name: letsencrypt-staging
+    spec:
+      acme:
+        email: $EMAIL
+        server: https://acme-staging-v02.api.letsencrypt.org/directory
+        privateKeySecretRef:
+          name: letsencrypt-staging
+        solvers:
+          - http01:
+              ingress:
+                class: nginx
+    EOF
+  ```
+
+</details>
 
 Now that we've verified we have a local k8s cluster, let's get Argo and Vault up and running!
 
-# ArgoCD
-Before doing anything, you'll need some namespaces:
+## ArgoCD
+
+### Helm Installation
+We'll be installing the [argo-helm repo argo-cd chart](https://github.com/argoproj/argo-helm/blob/master/charts/argo-cd/)
+Run the following helm commands to install the charts:
+
+```bash
+helm repo add argo-cd https://argoproj.github.io/argo-helm
+helm dep update charts/argo-cd/
+echo "charts/" > charts/argo-cd/.gitignore
 ```
-kubectl create namespace argocd
-kubectl create namespace vault
+
+Which should return something like this:
+
+```
+"argo-cd" has been added to your repositories
+
+Hang tight while we grab the latest from your chart repositories...
+...Successfully got an update from the "argo" chart repository
+Update Complete. ⎈Happy Helming!⎈
+Saving 1 charts
+Downloading argo-cd from repo https://argoproj.github.io/argo-helm
+Deleting outdated charts
+```
+
+The next thing you need to do do is install the chart with:
+```bash
+helm install -n argo-cd argo-cd charts/argo/
 ```
 
 ## Argo CD with Vault (Kustomize Install)
+Old, not recently tested.
 ```bash
 # Create a Directory to Store the yamls
 mkdir kustomize && cd kustomize
@@ -101,29 +204,6 @@ cd ..
 k apply -k kustomize
 ```
 
-## Helm Installation without Vault
-First we'll need helm (`brew install helm`, if you haven't already). Then, if you want this to be repeatable, you can clone this repo because you'll need to create the `Chart.yaml` and `values.yaml` in `charts/argo`. You can update your `version` parameter in `charts/argo/Chart.yaml` to the `version` param you see in [this repo](https://github.com/argoproj/argo-helm/blob/master/charts/argo-cd/Chart.yaml), at whatever time in the future that you're working on this. If you don't verify that version you will end up like me, half way down this article... :facepalm:
-
-Then you can run the following helm commands:
-
-```bash
-$ helm repo add argo https://argoproj.github.io/argo-helm
-"argo" has been added to your repositories
-
-$ helm dep update charts/argo/
-Hang tight while we grab the latest from your chart repositories...
-...Successfully got an update from the "argo" chart repository
-Update Complete. ⎈Happy Helming!⎈
-Saving 1 charts
-Downloading argo-cd from repo https://argoproj.github.io/argo-helm
-Deleting outdated charts
-```
-
-The next thing you need to do do is install the chart with:
-
-```bash
-$ helm install argo-cd charts/argo/
-```
 
 ### How to fix crd-install issue (Skip if no issue on `helm install`)
 *Why and How*
@@ -226,38 +306,9 @@ You'll need to make sure you have your argo CD server address set with:
 ```bash
 # create the default config location:
 $ mkdir -p ~/.config/argocd/config
-
-# missing argo config set up ???
-
-# then you can run the following
-$ argocd login localhost:8080 --username admin --password $yourpassword
-```
-#### WARNING: the above command will fail right now
-
-If you don't have the argoCD server address already specified you'll get this:
-```bash
-FATA[0000] Argo CD server address unspecified
 ```
 
-# Vault
-Follow along [here](https://learn.hashicorp.com/tutorials/vault/kubernetes-raft-deployment-guide?in=vault/kubernetes).
-
-```bash
-# add the helm repo
-helm repo add hashicorp https://helm.releases.hashicorp.com
-
-# create a spot for the chart
-mkdir charts/vault && cd charts/vault/
-
-# can also curl chart here
-wget https://raw.githubusercontent.com/hashicorp/vault-helm/main/Chart.yaml
-```
-
-Then you'll want to review the current [values.yaml](https://github.com/hashicorp/vault-helm/blob/main/values.yaml) for vault at the source. After that, or even before, you can pull the whole file and only use what you need:
-
-```bash
-wget https://raw.githubusercontent.com/hashicorp/vault-helm/main/values.yaml
-```
-
-# Success!
-You can check out another tutorial for kafka on k8s [here](https://github.com/jessebot/argo-kafka-example)
+# Notes
+Still interested in Vault with ArgoCD? Check out the following:
+- [ArgoCD Vault Plugin](https://argocd-vault-plugin.readthedocs.io/en/stable/installation/) - ArgoCD with Vault
+- [ArgoCD Vault Replacer](https://github.com/crumbhole/argocd-vault-replacer) - for replacing secrets with vault values
