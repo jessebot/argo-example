@@ -1,4 +1,4 @@
-# ArgoCD and Vault on K8s
+# ArgoCD on K8s (now with secrets)
 Just a quick example of how to set up a test Kuberentes (k8s) environment with KIND, and then use ArgoCD for k8s config management and then we'll also setup bitnami's sealed secret for you (This will allow you to encrypt secrets so they are safe for git checkin) :) In the future, we'll support other secret solutions, but as this is geared towards a homelab, at this time, we won't be supporting Vault, as to be secure, and match production, we'd need a multinode cluster, which is not always feasible for smaller labs. 
 
 ## Tech stack
