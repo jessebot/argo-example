@@ -13,5 +13,8 @@ brew "helm"
 # continuous delivery for k8s stuff
 brew "argocd"
 
+# for sealed k8s secrets :)
+brew "kubeseal"
+
 # uncomment this for a little train that will go across your screen when you type sl
 # brew "sl"
