@@ -56,6 +56,7 @@ Create a kubernetes cluster. If you don't have one, expand and follow the "Creat
   and will install KIND with the proper ingress controller resources as well as metallb so you can locally route your install :) 
 
   ```bash
+    # You can look at exactly what this does in https://raw.githubusercontent.com/jessebot/smol_k8s_homelab/main/kind/README.md
     /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/jessebot/smol_k8s_homelab/main/kind/bash_full_quickstart.sh)"
   ```
 
