@@ -7,7 +7,7 @@ Just a quick example of how to set up a test Kuberentes (k8s) environment with K
 | [Docker](https://www.docker.com/get-started/)         | for the containers |
 | [KIND](https://kind.sigs.k8s.io/)                     |  Tool to spin up a [Kubernetes](https://kubernetes.io/docs/concepts/overview/what-is-kubernetes/) [CLUSTER](media/peridot.png) in Docker, which we use to scale containers :3 |
 | [helm2/helm3](https://helm.sh/docs/intro/quickstart/) | installs k8s apps (mostly a bunch of k8s yamls) |
-| [ArgoCD](https://argo-cd.readthedocs.io/en/stable/)   | Continuous Delivery for k8s, from within k8s |
+| [Argo CD](https://argo-cd.readthedocs.io/en/stable/)   | Continuous Delivery for k8s, from within k8s |
 | [sealed-secrets](https://github.com/bitnami-labs/sealed-secrets) | generation of secrets as encrypted blobs so you can check secrets into git |
 
 
@@ -158,39 +158,51 @@ Create a kubernetes cluster. If you don't have one, expand and follow the "Creat
 
 Now that we've verified we have a local k8s cluster, let's get Argo and Bitnami Sealed Secrets up and running!
 
-## ArgoCD
+## Sealed Secrets
+This is a Bitnami project, so we'll need to first add their helm chart repo:
+```bash
+helm repo add https://bitnami-labs.github.io/sealed-secrets
+helm repo update
+```
 
-### Helm Installation
-We'll be installing the [argo-helm repo argo-cd chart](https://github.com/argoproj/argo-helm/blob/master/charts/argo-cd/)
-Run the following helm commands to install the charts:
+Then you can install the helm chart like this:
+```bash
+helm install sealed-secrets -n sealed-secrets --create-namespace --set namespace="sealed-secrets" sealed-secrets/sealed-secrets
+```
+
+That's it :D Onto argocd~!
+
+## ArgoCD
+We'll be installing the [argo-helm repo argo-cd chart](https://github.com/argoproj/argo-helm/blob/master/charts/argo-cd/).
+Run the following helm commands to add the helm repo first:
 
 ```bash
+# add the repo and update
 helm repo add argo-cd https://argoproj.github.io/argo-helm
-helm dep update charts/argo-cd/
-
-# ignore charts from here on out
-echo "charts/" > charts/argo-cd/.gitignore
+helm repo update
 ```
 
-Which should return something like this:
-
-```
-"argo-cd" has been added to your repositories
-
-Hang tight while we grab the latest from your chart repositories...
-...Successfully got an update from the "argo" chart repository
-Update Complete. ⎈Happy Helming!⎈
-Saving 1 charts
-Downloading argo-cd from repo https://argoproj.github.io/argo-helm
-Deleting outdated charts
+Next, go into `values.yml` in this repo and change line 9 from `selfhosting4dogs.com` to a domain of your choosing :)
+```yaml
+   hosts:
+     - "argocd.selfhosting4dogs.com"
 ```
 
 The next thing you need to do do is install the chart with:
 ```bash
-helm install argocd -n argocd --create-namespace --values values.yml
+helm install argocd argo-cd/argo-cd -n argocd --create-namespace --values values.yml
 ```
 
 ## Argo via the GUI
+Assuming this is a local homelab setup, you'll need to either go into your router and update your DNS or you can update your `/etc/hosts` file to route this to the local IP of this cluster. For example, here's my `/etc/hosts`:
+
+```
+127.0.0.1       localhost
+192.168.42.42   selfhosting4dogs.com
+```
+
+You should be able ot go to http://selfhosting4dogs.com in a browser now.
+
 You can now login with the default username, `admin`, and auto-generated password from this k8s secret:
 ```bash
 kubectl get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d
@@ -210,6 +222,18 @@ You'll need to make sure you have your argo CD server address set with:
 ```bash
 # create the default config location:
 $ mkdir -p ~/.config/argocd/config
+```
+
+# Cleanup
+To delete the kind cluster:
+```bash
+kind delete cluster
+```
+
+To just uninstall everything we installed:
+```bash
+helm uninstall argo-cd -n argocd
+helm uninstall sealed-secrets -n sealed-secrets
 ```
 
 # Notes
