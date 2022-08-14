@@ -122,10 +122,32 @@ argocd completion bash > ~/.bashrc_argocd
 source ~/.bashrc_argocd
 ```
 
-You'll need to make sure you have your argo CD server address set with:
+Grab the exact host from the output of the checking the ingress:
 ```bash
-# create the default config location:
-mkdir -p ~/.config/argocd/config
+kubectl get ing -A
+NAMESPACE   NAME                    CLASS   HOSTS                   ADDRESS         PORTS   AGE
+argocd      argo-cd-argocd-server   nginx   argocd.vleermuis.tech   192.168.50.40   80      31s
+```
+
+Get your password here.
+```bash
+   kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d
+```
+
+This you should be able to login like so:
+```bash
+  argocd login --username admin --password mysupercoolplaintextpassword argocd.vleermuis.tech --grpc-web
+```
+
+Which should return something like this:
+```
+'admin:login' logged in successfully
+Context 'argocd.vleermuis.tech' updated
+```
+
+Now you can do things like this, checking your active argocd repos:
+```
+argocd repo list --grpc-web
 ```
 
 # Cleanup
