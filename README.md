@@ -31,6 +31,8 @@ Just a quick example of how to set up a test Kuberentes (k8s) environment with K
 
   ### LinuxBrew
 
+  Make sure you have the [`Brewfile_linux`](./deps/Brewfile_linux) from this repo and then run:
+
   ```bash
   # Linux only
   brew bundle install deps/Brewfile_linux
