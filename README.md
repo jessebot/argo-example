@@ -52,111 +52,16 @@ Create a kubernetes cluster. If you don't have one, expand and follow the "Creat
 <details>
   <summary>Create a KIND Cluster</summary>
 
-  This is from the README.md for KIND in my other repo:
-  [https://github.com/jessebot/smol_k8s_homelab/main/kind/](https://www.pfsense.org/products/#requirements)
-  
-  Create a quick small "ingress ready" KIND cluster with the below commands. 
-  It will create a cluster called kind, and it will have one node, but it will
-  be fast, like no more than a few minutes.
-  
+  This is from the my other homelab repo, [smol_k8s_homelab](https://github.com/jessebot/smol_k8s_homelab/),
+  and will install KIND with the proper ingress controller resources as well as metallb so you can locally route your install :) 
+
   ```bash
-    cat <<EOF | kind create cluster --config=-
-    kind: Cluster
-    apiVersion: kind.x-k8s.io/v1alpha4
-    nodes:
-    - role: control-plane
-      kubeadmConfigPatches:
-      - |
-        kind: InitConfiguration
-        nodeRegistration:
-          kubeletExtraArgs:
-            node-labels: "ingress-ready=true"
-      extraPortMappings:
-      - containerPort: 80
-        hostPort: 80
-        protocol: TCP
-      - containerPort: 443
-        hostPort: 443
-        protocol: TCP
-    EOF
-  ```
-  
-  Then install the nginx-ingress controller so you can access webpages from outside the cluster:
-  ```bash
-    kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/kind/deploy.yaml
-  ```
-  
-  You'll want to follow kind's advice and get some important info with, as well as verify the cluster is good to go:
-  ``` bash
-    kubectl cluster-info --context kind-kind
-    kind get clusters
-  ```
-  Those commands should output this:
-  ```bash
-    Kubernetes control plane is running at https://127.0.0.1:64067
-    CoreDNS is running at https://127.0.0.1:64067/api/v1/namespaces/kube-system/services/kube-dns:dns/proxy
-  
-    kind
+    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/jessebot/smol_k8s_homelab/main/kind/bash_full_quickstart.sh)"
   ```
 
 </details>
 
-<details>
-  <summary><b>Optional</b>: Install cert-manager</summary>
-
-  ```bash
-    helm repo add jetstack https://charts.jetstack.io
-    helm repo update
-    helm install cert-manager jetstack/cert-manager \
-        --namespace kube-system \
-        --version v1.9.1 \
-        --set installCRDs=true 
-  ```
-  
-  Wait on cert-manager to deploy:
-
-  ```bash
-    kubectl rollout status -n kube-system deployment/cert-manager
-    
-    kubectl rollout status -n kube-system deployment/cert-manager-webhook
-    
-    kubectl wait --namespace kube-system \
-      --for=condition=ready pod \
-      --selector=app.kubernetes.io/name=cert-manager \
-      --timeout=90s
-    
-    kubectl wait --namespace kube-system \
-      --for=condition=ready pod \
-      --selector=app.kubernetes.io/component=webhook \
-      --timeout=90s
-  ```
-
-  After you've confirmed via `k9s` or `kubectl get pods -A` that all the
-  cert-manager pods are completely ready, you can Deploy the lets-encrypt
-  staging cluster issuer:
-
-  ```bash
-    cat <<EOF | kubectl apply -f -
-    apiVersion: cert-manager.io/v1
-    kind: ClusterIssuer
-    metadata:
-      name: letsencrypt-staging
-    spec:
-      acme:
-        email: $EMAIL
-        server: https://acme-staging-v02.api.letsencrypt.org/directory
-        privateKeySecretRef:
-          name: letsencrypt-staging
-        solvers:
-          - http01:
-              ingress:
-                class: nginx
-    EOF
-  ```
-
-</details>
-
-Now that we've verified we have a local k8s cluster, let's get Argo and Bitnami Sealed Secrets up and running!
+Now that we have a local k8s cluster, let's get Argo and Bitnami Sealed Secrets up and running!
 
 ## Sealed Secrets
 This is a Bitnami project, so we'll need to first add their helm chart repo:
@@ -197,15 +102,14 @@ helm install argocd argo-cd/argo-cd -n argocd --create-namespace --values values
 Assuming this is a local homelab setup, you'll need to either go into your router and update your DNS or you can update your `/etc/hosts` file to route this to the local IP of this cluster. For example, here's my `/etc/hosts`:
 
 ```
-127.0.0.1       localhost
-192.168.42.42   selfhosting4dogs.com
+127.0.0.1       localhost argocd.selfhosting4dogs.com
 ```
 
-You should be able ot go to http://selfhosting4dogs.com in a browser now.
+Then, you should be able to go to http://argocd.selfhosting4dogs.com in a browser.
 
 You can now login with the default username, `admin`, and auto-generated password from this k8s secret:
 ```bash
-kubectl get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d
+kubectl get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" -n argo-cd | base64 -d
 ```
 
 ### CLI
