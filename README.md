@@ -125,8 +125,8 @@ source ~/.bashrc_argocd
 Grab the exact host from the output of the checking the ingress:
 ```bash
 kubectl get ing -A
-NAMESPACE   NAME                    CLASS   HOSTS                   ADDRESS         PORTS   AGE
-argocd      argo-cd-argocd-server   nginx   argocd.vleermuis.tech   192.168.50.40   80      31s
+NAMESPACE   NAME                    CLASS   HOSTS                           ADDRESS      PORTS    AGE
+argocd      argo-cd-argocd-server   nginx   argocd.selfhosting4dogs.com   192.168.72.22   80      31s
 ```
 
 Get your password here.
@@ -136,13 +136,13 @@ Get your password here.
 
 This you should be able to login like so:
 ```bash
-  argocd login --username admin --password mysupercoolplaintextpassword argocd.vleermuis.tech --grpc-web
+  argocd login --username admin --password mysupercoolplaintextpassword argocd.selfhosting4dogs.com --grpc-web
 ```
 
 Which should return something like this:
 ```
 'admin:login' logged in successfully
-Context 'argocd.vleermuis.tech' updated
+Context 'argocd.selfhosting4dogs.com' updated
 ```
 
 Now you can do things like this, checking your active argocd repos:
