@@ -58,6 +58,8 @@ Create a kubernetes cluster. If you don't have one, expand and follow the "Creat
   ```bash
     # You can look at exactly what this does in https://raw.githubusercontent.com/jessebot/smol_k8s_homelab/main/kind/README.md
     /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/jessebot/smol_k8s_homelab/main/kind/bash_full_quickstart.sh)"
+
+    # tip: use :quit to exit k9s, you can also use :q similar to vim
   ```
 
 </details>
@@ -116,17 +118,14 @@ kubectl get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" -n
 ### CLI
 First you should generate cli completion for your shell of choice. In my case, it was BASH:
 ```bash
-$ argocd completion bash > ~/.bashrc_argocd
-$ source ~/.bashrc_argocd
-
-# need to port forward, but we want this in the background
-$ kubectl port-forward svc/argo-cd-argocd-server 8080:443 &
+argocd completion bash > ~/.bashrc_argocd
+source ~/.bashrc_argocd
 ```
 
 You'll need to make sure you have your argo CD server address set with:
 ```bash
 # create the default config location:
-$ mkdir -p ~/.config/argocd/config
+mkdir -p ~/.config/argocd/config
 ```
 
 # Cleanup
@@ -135,7 +134,7 @@ To delete the kind cluster:
 kind delete cluster
 ```
 
-To just uninstall everything we installed:
+To just uninstall everything we installed for argocd and sealed secrets:
 ```bash
 helm uninstall argo-cd -n argocd
 helm uninstall sealed-secrets -n sealed-secrets
