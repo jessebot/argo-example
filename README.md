@@ -102,7 +102,7 @@ Create a kubernetes cluster. If you don't have one, expand and follow the "Creat
 </details>
 
 <details>
-  <summary>*Optional*: Install cert-manager</summary>
+  <summary><b>Optional</b>: Install cert-manager</summary>
 
   ```bash
     helm repo add jetstack https://charts.jetstack.io
