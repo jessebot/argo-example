@@ -154,7 +154,7 @@ Create a kubernetes cluster. If you don't have one, expand and follow the "Creat
 
 </details>
 
-Now that we've verified we have a local k8s cluster, let's get Argo and Vault up and running!
+Now that we've verified we have a local k8s cluster, let's get Argo and Bitnami Sealed Secrets up and running!
 
 ## ArgoCD
 
@@ -165,6 +165,8 @@ Run the following helm commands to install the charts:
 ```bash
 helm repo add argo-cd https://argoproj.github.io/argo-helm
 helm dep update charts/argo-cd/
+
+# ignore charts from here on out
 echo "charts/" > charts/argo-cd/.gitignore
 ```
 
@@ -183,28 +185,34 @@ Deleting outdated charts
 
 The next thing you need to do do is install the chart with:
 ```bash
-helm install -n argo-cd argo-cd charts/argo/
+helm install argocd -n argocd --create-namespace --values values.yml
 ```
 
-## Argo CD with Vault (Kustomize Install)
-Old, not recently tested.
+## Argo via the GUI
+You can now login with the default username, `admin`, and auto-generated password from this k8s secret:
 ```bash
-# Create a Directory to Store the yamls
-mkdir kustomize && cd kustomize
-
-# Download all the graciously provided - can also use curl
-wget https://raw.githubusercontent.com/argoproj-labs/argocd-vault-plugin/main/manifests/argocd-cm.yaml
-wget https://raw.githubusercontent.com/argoproj-labs/argocd-vault-plugin/main/manifests/argocd-repo-server-deploy.yaml
-wget https://raw.githubusercontent.com/argoproj-labs/argocd-vault-plugin/main/manifests/kustomization.yaml
-
-# go up one dir
-cd ..
-
-# apply the kustomize files
-k apply -k kustomize
+kubectl get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d
 ```
 
+### CLI
+First you should generate cli completion for your shell of choice. In my case, it was BASH:
+```bash
+$ argocd completion bash > ~/.bashrc_argocd
+$ source ~/.bashrc_argocd
 
+# need to port forward, but we want this in the background
+$ kubectl port-forward svc/argo-cd-argocd-server 8080:443 &
+```
+
+You'll need to make sure you have your argo CD server address set with:
+```bash
+# create the default config location:
+$ mkdir -p ~/.config/argocd/config
+```
+
+# Notes
+
+## Troubleshooting
 ### How to fix crd-install issue (Skip if no issue on `helm install`)
 *Why and How*
 You would see this:
@@ -252,63 +260,7 @@ $ helm uninstall argo-cd
 release "argo-cd" uninstalled
 ```
 
-### Resume here after CRD issue detour
-Now, for the perfect installation of our dreams:
-```bash
-$ helm install argo-cd charts/argo/
-NAME: argo-cd
-LAST DEPLOYED: Wed May 11 14:52:59 2022
-NAMESPACE: default
-STATUS: deployed
-REVISION: 1
-TEST SUITE: None
-```
-:chef-kiss:
-
-## Argo via the GUI
-You'll need to test out the front end, but before you can do that, you need to do some port forwarding:
-```bash
-# Do this one if you didn't install ArgoCD with Vault
-$ kubectl port-forward svc/argo-cd-argocd-server 8080:443
-Forwarding from 127.0.0.1:8080 -> 8080
-Forwarding from [::1]:8080 -> 8080
-Handling connection for 8080
-```
-or
-```bash
-# Do this if you installed ArgoCD WITH Vault
-$ kubectl port-forward svc/argocd-server 8080:443
-Forwarding from 127.0.0.1:8080 -> 8080
-Forwarding from [::1]:8080 -> 8080
-Handling connection for 8080
-```
-
-SUCCESS, we now get this in the browser:
-
-<img src="media/argo_screenshot_2022-05-11_15.36.20.png" alt="Screenshot of the self-hosted-k8s ArgoCD login page in firefox" width="500"/>
-
-You can now login with the default username, `admin`, and auto-generated password from this k8s secret:
-```bash
-kubectl get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d
-```
-
-### CLI
-First you should generate cli completion for your shell of choice. In my case, it was BASH:
-```bash
-$ argocd completion bash > ~/.bashrc_argocd
-$ source ~/.bashrc_argocd
-
-# need to port forward, but we want this in the background
-$ kubectl port-forward svc/argo-cd-argocd-server 8080:443 &
-```
-
-You'll need to make sure you have your argo CD server address set with:
-```bash
-# create the default config location:
-$ mkdir -p ~/.config/argocd/config
-```
-
-# Notes
+## Other Tips
 Still interested in Vault with ArgoCD? Check out the following:
 - [ArgoCD Vault Plugin](https://argocd-vault-plugin.readthedocs.io/en/stable/installation/) - ArgoCD with Vault
 - [ArgoCD Vault Replacer](https://github.com/crumbhole/argocd-vault-replacer) - for replacing secrets with vault values
